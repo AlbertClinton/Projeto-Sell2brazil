@@ -1,0 +1,50 @@
+version: '3.7'
+services:
+    webserver:
+        image: nginx
+        volumes_from:
+            - api
+        volumes:
+            - ./app:/var/www
+
+        depends_on: api
+
+    mysql:
+        image: mysql
+        volumes:
+            - todo-mysql-data:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: secret
+
+    api:
+        depends_on:
+            - mysql
+        environment:
+            MYSQL_HOST: mysql
+            MYSQL_USER: root
+            MYSQL_PORT: '3306'
+            MYSQL_PASSWORD: secret
+            MYSQL_DB: Sell2Brazil
+        ports:
+            - 8000:8000
+        build:
+            context: .
+            dockerfile: LaravelDockerfile
+        working_dir: /app
+        command: php artisan migrate:fresh
+        volumes:
+            - ./Laravel:/app
+
+    front:
+        depends_on:
+            - api
+        image: node
+        ports:
+            - 8080:8080
+        working_dir: /app
+        command: bash -c "npm install && npm start"
+        volumes:
+            - ./Vue:/app
+
+volumes:
+  todo-mysql-data:

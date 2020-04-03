@@ -19,3 +19,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::apiResource('/user', 'UserController');
+Route::get('/teste', function(){
+    return env('DB_HOST');
+});
