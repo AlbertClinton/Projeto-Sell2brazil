@@ -1,0 +1,53 @@
+version: '3.7'
+services:
+    mysql:
+        image: mysql:8.0
+        command: --default-authentication-plugin=mysql_native_password
+        volumes:
+            - db-data:/var/lib/mysql
+        environment:
+            - "MYSQL_USER=db-user"
+            - "MYSQL_PASSWORD=secret"
+            - "MYSQL_DATABASE=Sell2Brazil"
+            - "MYSQL_ROOT_PASSWORD=root_secret"
+
+    app:
+        depends_on:
+            - mysql
+        build:
+            context: .
+            dockerfile: app.Dockerfile
+        expose:
+            - "9000"
+        volumes: 
+            - app-data:/var/www
+        environment:
+            - "MYSQL_HOST=mysql"
+            - "MYSQL_USER=db-user"
+            - "MYSQL_PORT=3306"
+            - "MYSQL_PASSWORD=secret"
+            - "MYSQL_DATABASE=Sell2Brazil"
+
+    webserver:
+        depends_on:
+            - app
+        build:
+            context: .
+            dockerfile: webserver.Dockerfile
+        ports:
+            - 8000:80
+        volumes: 
+            - app-data:/var/www
+
+    front:
+        depends_on:
+            - webserver
+        build:
+            context: .
+            dockerfile: front.Dockerfile
+        ports:
+            - 80:8080
+
+volumes:
+    db-data:
+    app-data:
