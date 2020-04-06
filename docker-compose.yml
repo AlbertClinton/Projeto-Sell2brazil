@@ -1,50 +1,53 @@
 version: '3.7'
 services:
-    webserver:
-        image: nginx
-        volumes_from:
-            - api
-        volumes:
-            - ./app:/var/www
-
-        depends_on: api
-
     mysql:
-        image: mysql
+        image: mysql:8.0
+        command: --default-authentication-plugin=mysql_native_password
         volumes:
-            - todo-mysql-data:/var/lib/mysql
+            - db-data:/var/lib/mysql
         environment:
-            MYSQL_ROOT_PASSWORD: secret
+            - "MYSQL_USER=db-user"
+            - "MYSQL_PASSWORD=secret"
+            - "MYSQL_DATABASE=Sell2Brazil"
+            - "MYSQL_ROOT_PASSWORD=root_secret"
 
-    api:
+    app:
         depends_on:
             - mysql
-        environment:
-            MYSQL_HOST: mysql
-            MYSQL_USER: root
-            MYSQL_PORT: '3306'
-            MYSQL_PASSWORD: secret
-            MYSQL_DB: Sell2Brazil
-        ports:
-            - 8000:8000
         build:
             context: .
-            dockerfile: LaravelDockerfile
-        working_dir: /app
-        command: php artisan migrate:fresh
-        volumes:
-            - ./Laravel:/app
+            dockerfile: app.Dockerfile
+        expose:
+            - "9000"
+        volumes: 
+            - app-data:/var/www
+        environment:
+            - "MYSQL_HOST=mysql"
+            - "MYSQL_USER=db-user"
+            - "MYSQL_PORT=3306"
+            - "MYSQL_PASSWORD=secret"
+            - "MYSQL_DATABASE=Sell2Brazil"
+
+    webserver:
+        depends_on:
+            - app
+        build:
+            context: .
+            dockerfile: webserver.Dockerfile
+        ports:
+            - 8000:80
+        volumes: 
+            - app-data:/var/www
 
     front:
         depends_on:
-            - api
-        image: node
+            - webserver
+        build:
+            context: .
+            dockerfile: front.Dockerfile
         ports:
-            - 8080:8080
-        working_dir: /app
-        command: bash -c "npm install && npm start"
-        volumes:
-            - ./Vue:/app
+            - 80:8080
 
 volumes:
-  todo-mysql-data:
+    db-data:
+    app-data:
